@@ -2,6 +2,15 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://bluetardis.top/about/index.html</loc>
+    
+    <lastmod>2026-07-20</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
     <loc>https://bluetardis.top/2026/07/20/2026%E4%B8%8A-AI%E4%B8%8E%E8%99%9A%E6%97%A0/</loc>
     
     <lastmod>2026-07-20</lastmod>
@@ -77,15 +86,6 @@
     <loc>https://bluetardis.top/2023/09/03/%E8%8C%AB%E8%8C%AB%E4%BA%BA%E7%94%9F%20%E5%A5%BD%E5%83%8F%E8%8D%92%E9%87%8E/</loc>
     
     <lastmod>2023-09-28</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://bluetardis.top/about/index.html</loc>
-    
-    <lastmod>2023-09-03</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
