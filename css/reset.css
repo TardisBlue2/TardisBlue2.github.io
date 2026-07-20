@@ -1,70 +1,21 @@
-@charset "utf-8";
-
 *,
 *::before,
-*::after
-{
-    box-sizing: border-box;
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
-
-body,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p,
-figure,
-blockquote,
-dl,
-dd
-{
-    margin: 0;
+html {
+  font-size: $rem;
 }
-
-ul,
-ol
-{
-    list-style: none;
+body {
+  width: 100%;
+  height: 100%;
+  font-family: $font-family;
+  background: $color-white;
+  color: $color-black-2;
+  -webkit-font-smoothing: antialiased;
 }
-
-ul
-{
-    padding-inline-start: 0;
-}
-
-html,
-body
-{
-    scroll-behavior: smooth;
-}
-
-a:not([class])
-{
-    text-decoration-skip-ink: auto;
-}
-
-img,
-picture
-{
-    width: auto;
-    max-width: 100%;
-    display: block;
-}
-
-input,
-button,
-textarea,
-select
-{
-    font: inherit;
-}
-
-@media (prefers-reduced-motion: reduce)
-{
-    html:focus-within
-    {
-        scroll-behavior: auto;
-    }
+a {
+  color: currentColor;
 }
