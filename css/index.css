@@ -9,9 +9,10 @@
   --line: #d4d3cc;
   --line-strong: #24231f;
   --frame: #24231f;
-  --accent: #ebc65a;
-  --accent-strong: #8a6300;
-  --accent-soft: rgb(235 198 90 / 22%);
+  --accent: #003b6f;
+  --accent-strong: #002b52;
+  --accent-soft: rgb(0 59 111 / 14%);
+  --accent-ink: #ffffff;
   --code-surface: #f1f1ed;
   --selection: #3e392d;
   --shadow: 0 20px 60px rgb(36 35 31 / 16%);
@@ -114,7 +115,7 @@ img {
   left: 1rem;
   z-index: 100;
   padding: 0.7rem 1rem;
-  color: #24231f;
+  color: var(--accent-ink);
   background: var(--accent);
   font-weight: 700;
   transform: translateY(-180%);
@@ -602,7 +603,7 @@ a:hover .post__tags {
 }
 
 .article__content mark {
-  color: var(--ink);
+  color: var(--accent-ink);
   background: var(--accent);
 }
 
@@ -776,7 +777,7 @@ a:hover .post__tags {
 
 .paginator a:hover,
 .paginator .current {
-  color: #24231f;
+  color: var(--accent-ink);
   background: var(--accent);
   border-color: var(--accent);
 }
@@ -868,7 +869,7 @@ a:hover .post__tags {
   min-width: 2rem;
   height: 2rem;
   place-items: center;
-  color: #24231f;
+  color: var(--accent-ink);
   background: var(--accent);
   font-family: var(--mono);
   font-size: 0.75rem;
@@ -972,10 +973,10 @@ a:hover .post__tags {
     align-items: center;
     min-height: 2.9rem;
     padding: 0.65rem 0.9rem;
-    color: #24231f;
+    color: var(--accent-ink);
     background: var(--accent);
-    border: 1px solid #9e780e;
-    box-shadow: 0 10px 24px rgb(56 45 13 / 24%);
+    border: 1px solid var(--accent-strong);
+    box-shadow: 0 10px 24px rgb(0 59 111 / 24%);
     font-size: 0.82rem;
     font-weight: 800;
     cursor: pointer;
