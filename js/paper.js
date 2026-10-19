@@ -3,8 +3,6 @@
 
   const root = document.documentElement
   const themeKey = 'paper:theme:v1'
-  const likePrefix = 'paper:local-like:v1:'
-  const likeCountPrefix = 'paper:local-like-count:v1:'
   const likeClientKey = 'paper:local-like-client:v1'
   const mobileSidebar = window.matchMedia('(max-width: 959px)')
   const numberFormat = new Intl.NumberFormat('zh-CN')
@@ -43,28 +41,17 @@
     if (metaThemeColor) metaThemeColor.setAttribute('content', '#ffffff')
   }
 
-  function normalizeCount(value, fallback = 0) {
-    const parsed = Number(value)
-    if (!Number.isFinite(parsed) || parsed < 0) return fallback
-    return Math.floor(parsed)
-  }
-
-  function readRemoteCount(payload, fallback) {
-    return normalizeCount(
-      payload?.likes ?? payload?.count ?? payload?.data?.likes ?? payload?.data?.count,
-      fallback,
-    )
-  }
-
+  let sessionLikeClientId
   function getLikeClientId() {
+    if (sessionLikeClientId) return sessionLikeClientId
     const saved = storage.get(likeClientKey)
-    if (saved) return saved
+    if (saved) return (sessionLikeClientId = saved)
 
     const generated = globalThis.crypto?.randomUUID
       ? globalThis.crypto.randomUUID()
       : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
     storage.set(likeClientKey, generated)
-    return generated
+    return (sessionLikeClientId = generated)
   }
 
   async function requestLike(endpoint, postKey, options = {}) {
@@ -73,11 +60,15 @@
     const controller = new AbortController()
     const timeout = window.setTimeout(() => controller.abort(), 5000)
 
-    if (method === 'GET') target.searchParams.set('path', postKey)
+    if (method === 'GET') {
+      target.searchParams.set('path', postKey)
+      target.searchParams.set('clientId', getLikeClientId())
+    }
 
     try {
       const response = await window.fetch(target, {
         method,
+        cache: 'no-store',
         headers: method === 'POST'
           ? { Accept: 'application/json', 'Content-Type': 'application/json' }
           : { Accept: 'application/json' },
@@ -92,7 +83,7 @@
       })
 
       if (!response.ok) throw new Error(`Like API returned ${response.status}`)
-      return response.json()
+      return await response.json()
     } finally {
       window.clearTimeout(timeout)
     }
@@ -101,88 +92,55 @@
   function setupLocalLike() {
     document.querySelectorAll('.local-like__button').forEach(button => {
       const postKey = button.dataset.postKey || window.location.pathname
-      const encodedPostKey = encodeURIComponent(postKey)
-      const storageKey = `${likePrefix}${encodedPostKey}`
-      const countStorageKey = `${likeCountPrefix}${encodedPostKey}`
       const endpoint = button.dataset.likeEndpoint?.trim()
       const icon = button.querySelector('.local-like__icon')
       const countNode = button.querySelector('.local-like__count')
       const label = button.querySelector('.local-like__label')
-      let liked = storage.get(storageKey) === '1'
-      let count = Math.max(normalizeCount(storage.get(countStorageKey)), liked ? 1 : 0)
+      let liked = false
+      let count = null
       let pending = false
       let syncError = false
-      let interacted = false
-
+      let ready = false
       const render = () => {
-        const formattedCount = numberFormat.format(count)
-        const actionLabel = liked ? '取消点赞' : '点赞'
+        const total = count === null ? '—' : numberFormat.format(count)
+        const action = liked ? '取消点赞' : '点赞'
+        const message = syncError ? '点赞服务暂不可用，点击重试' : pending ? '正在同步点赞' : `共 ${total} 个赞，点击${action}`
+        button.disabled = pending || !endpoint
         button.classList.toggle('is-liked', liked)
         button.classList.toggle('is-pending', pending)
         button.setAttribute('aria-pressed', String(liked))
         button.setAttribute('aria-busy', String(pending))
         button.dataset.syncState = syncError ? 'error' : pending ? 'pending' : 'ready'
-        button.disabled = pending
-        button.setAttribute(
-          'aria-label',
-          syncError ? `点赞同步失败，共 ${formattedCount} 个赞，请重试` : `共 ${formattedCount} 个赞，点击${actionLabel}`,
-        )
-        button.setAttribute('title', syncError ? '点赞同步失败，请重试' : `共 ${formattedCount} 个赞`)
+        button.setAttribute('aria-label', message)
+        button.setAttribute('title', message)
         if (icon) icon.textContent = liked ? '♥' : '♡'
-        if (countNode) countNode.textContent = formattedCount
-        if (label) label.textContent = actionLabel
+        if (countNode) countNode.textContent = syncError ? '重试' : total
+        if (label) label.textContent = message
       }
-
-      const persist = () => {
-        storage.set(storageKey, liked ? '1' : '0')
-        storage.set(countStorageKey, String(count))
-      }
-
-      button.addEventListener('click', async () => {
-        if (pending) return
-        interacted = true
-        const previousLiked = liked
-        const previousCount = count
-        liked = !liked
-        count = Math.max(0, count + (liked ? 1 : -1))
-        syncError = false
-        persist()
-        render()
-
-        if (!endpoint) return
-
+      const sync = async (action) => {
         pending = true
+        syncError = false
         render()
         try {
-          const payload = await requestLike(endpoint, postKey, {
-            method: 'POST',
-            action: liked ? 'like' : 'unlike',
-          })
-          count = readRemoteCount(payload, count)
-          persist()
+          const payload = await requestLike(endpoint, postKey, action ? { method: 'POST', action } : {})
+          if (!Number.isSafeInteger(payload.likes) || payload.likes < 0 || typeof payload.liked !== 'boolean') throw new Error('Invalid response')
+          count = payload.likes
+          liked = payload.liked
+          ready = true
         } catch (_) {
-          liked = previousLiked
-          count = previousCount
+          // A timed-out write may have succeeded. Re-read before allowing another toggle.
+          ready = false
           syncError = true
-          persist()
         } finally {
           pending = false
           render()
         }
-      })
-
-      render()
-
-      if (endpoint) {
-        requestLike(endpoint, postKey)
-          .then(payload => {
-            if (interacted) return
-            count = readRemoteCount(payload, count)
-            storage.set(countStorageKey, String(count))
-            render()
-          })
-          .catch(() => {})
       }
+      button.addEventListener('click', () => {
+        if (!pending && endpoint) sync(ready ? (liked ? 'unlike' : 'like') : undefined)
+      })
+      if (endpoint) sync()
+      else { syncError = true; render() }
     })
   }
 
